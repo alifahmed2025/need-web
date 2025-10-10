@@ -215,7 +215,7 @@ export function CheckoutModal({ open, onOpenChange, cartItems }: CheckoutModalPr
           </div>
 
           {/* Upsell Product */}
-          <div className="border-2 border-accent/30 rounded-lg p-4 bg-accent/5">
+          {/* <div className="border-2 border-accent/30 rounded-lg p-4 bg-accent/5">
             <div className="flex items-center gap-3">
               <Plus className="h-5 w-5 text-accent flex-shrink-0" />
               <div className="flex-1">
@@ -223,7 +223,7 @@ export function CheckoutModal({ open, onOpenChange, cartItems }: CheckoutModalPr
                 <p className="text-sm text-muted-foreground">একই ডেলিভারি চার্জে পেয়ে যাচ্ছেন</p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Submit Buttons */}
           <div className="space-y-3">
