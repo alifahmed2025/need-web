@@ -111,9 +111,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
+           {/* <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
                        ← Back to Home 
-          </Link>  
+          </Link>   */}
 
           <div className="grid lg:grid-cols-2 gap-8 mt-6">
             <div className="space-y-4">

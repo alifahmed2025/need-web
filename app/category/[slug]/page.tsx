@@ -60,9 +60,9 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
+          {/* <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
             ← Back to Home
-          </Link>
+          </Link> */}
 
           <div className="mt-6">
             <h1 className="text-3xl md:text-4xl font-bold mb-2">{categoryName}</h1>

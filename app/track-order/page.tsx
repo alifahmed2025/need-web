@@ -21,7 +21,7 @@ export default function TrackOrderPage() {
 
   return (
     <>
-      {/* <TopBar />
+     <TopBar />
       <Header />
 
       <div className="min-h-screen bg-background">
@@ -132,7 +132,7 @@ export default function TrackOrderPage() {
         </div>
       </div>
 
-      <Footer /> */}
+      <Footer /> 
     </>
   )
 }
