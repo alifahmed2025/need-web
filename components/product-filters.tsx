@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { X } from "lucide-react"
+import { X, Filter } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface ProductFiltersProps {
   onFilterChange: (filters: FilterState) => void
@@ -23,6 +24,8 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
     availability: [],
     priceRange: [0, 5000],
   })
+
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const collections = [
     "Mustard Oil",
@@ -80,27 +83,122 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
     filters.priceRange[1] < 5000
 
   return (
-    <div className="bg-card border rounded-lg p-6 space-y-6 sticky top-24">
+    <>
+      {/* -------- Mobile Filter Button -------- */}
+      <div className="lg:hidden mb-4">
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-center gap-2"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Filter className="h-5 w-5" />
+          Filters
+        </Button>
+      </div>
+
+      {/* -------- Desktop Sidebar -------- */}
+      <div className="hidden lg:block bg-card border rounded-lg p-6 space-y-6 sticky top-24">
+        <FilterContent
+          filters={filters}
+          hasActiveFilters={hasActiveFilters}
+          clearFilters={clearFilters}
+          collections={collections}
+          availabilityOptions={availabilityOptions}
+          handleCollectionChange={handleCollectionChange}
+          handleAvailabilityChange={handleAvailabilityChange}
+          handlePriceChange={handlePriceChange}
+        />
+      </div>
+
+      {/* -------- Mobile Popup Drawer -------- */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              className="fixed inset-0 bg-black/50 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+            />
+            {/* Drawer */}
+            <motion.div
+              className="fixed top-0 right-0 h-full w-80 bg-white z-50 shadow-xl p-5 overflow-y-auto"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Filters</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <FilterContent
+                filters={filters}
+                hasActiveFilters={hasActiveFilters}
+                clearFilters={clearFilters}
+                collections={collections}
+                availabilityOptions={availabilityOptions}
+                handleCollectionChange={handleCollectionChange}
+                handleAvailabilityChange={handleAvailabilityChange}
+                handlePriceChange={handlePriceChange}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
+/* ------------ Reusable Filter Content Section ------------ */
+function FilterContent({
+  filters,
+  hasActiveFilters,
+  clearFilters,
+  collections,
+  availabilityOptions,
+  handleCollectionChange,
+  handleAvailabilityChange,
+  handlePriceChange,
+}: any) {
+  return (
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-lg">Filters</h3>
+        <h3 className="font-bold text-lg"></h3>
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-accent hover:text-accent">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            className="text-accent hover:text-white"
+          >
             <X className="h-4 w-4 mr-1" />
             Clear All
           </Button>
         )}
       </div>
 
-      {/* Collections Filter */}
+      {/* Collections */}
       <div className="space-y-3">
         <h4 className="font-semibold text-sm">Collections</h4>
         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {collections.map((collection) => (
+          {collections.map((collection: string) => (
             <div key={collection} className="flex items-center space-x-2">
               <Checkbox
                 id={`collection-${collection}`}
                 checked={filters.collections.includes(collection)}
-                onCheckedChange={(checked) => handleCollectionChange(collection, checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handleCollectionChange(collection, checked as boolean)
+                }
               />
               <Label
                 htmlFor={`collection-${collection}`}
@@ -113,16 +211,18 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
         </div>
       </div>
 
-      {/* Availability Filter */}
+      {/* Availability */}
       <div className="space-y-3 border-t pt-6">
         <h4 className="font-semibold text-sm">Availability</h4>
         <div className="space-y-2">
-          {availabilityOptions.map((option) => (
+          {availabilityOptions.map((option: string) => (
             <div key={option} className="flex items-center space-x-2">
               <Checkbox
                 id={`availability-${option}`}
                 checked={filters.availability.includes(option)}
-                onCheckedChange={(checked) => handleAvailabilityChange(option, checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handleAvailabilityChange(option, checked as boolean)
+                }
               />
               <Label
                 htmlFor={`availability-${option}`}
@@ -135,7 +235,7 @@ export function ProductFilters({ onFilterChange }: ProductFiltersProps) {
         </div>
       </div>
 
-      {/* Price Range Filter */}
+      {/* Price Range */}
       <div className="space-y-4 border-t pt-6">
         <h4 className="font-semibold text-sm">Price Range</h4>
         <div className="space-y-4">

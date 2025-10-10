@@ -111,9 +111,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
-          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
-            ← Back to Home
-          </Link>
+           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
+                       ← Back to Home 
+          </Link>  
 
           <div className="grid lg:grid-cols-2 gap-8 mt-6">
             <div className="space-y-4">
@@ -149,7 +149,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               </div>
 
               <div className="space-y-4 border-y py-6">
-                <div>
+                {/* <div>
                   <label className="text-sm font-semibold mb-2 block">Select Size</label>
                   <div className="flex gap-2">
                     {["S", "M", "L", "XL", "XXL"].map((size) => (
@@ -163,7 +163,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                       </Button>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 <div>
                   <label className="text-sm font-semibold mb-2 block">Quantity</label>
