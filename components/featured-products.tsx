@@ -1,11 +1,29 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import Link from "next/link"
-import { products } from "./products-section"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import Link from "next/link";
 
 export function FeaturedProducts() {
-  const featuredProducts = products.slice(0, 6)
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch("https://fakestoreapi.com/products");
+        if (!res.ok) throw new Error("Failed to fetch products");
+        const data = await res.json();
+        setFeaturedProducts(data.slice(0, 6)); // প্রথম 6টি প্রোডাক্ট
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    fetchProducts();
+  }, []);
+
+  if (featuredProducts.length === 0)
+    return <div className="p-10 text-center text-gray-500">Loading...</div>;
 
   return (
     <section className="py-12 md:py-16 bg-background">
@@ -22,14 +40,14 @@ export function FeaturedProducts() {
                   <div className="aspect-square relative overflow-hidden">
                     <img
                       src={product.image || "/placeholder.svg"}
-                      alt={product.name}
+                      alt={product.title}
                       className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col items-start p-3 gap-1">
-                  <p className="text-xs text-muted-foreground">{product.brand}</p>
-                  <h3 className="font-semibold text-sm line-clamp-2 text-balance">{product.name}</h3>
+                  <p className="text-xs text-muted-foreground capitalize">{product.category}</p>
+                  <h3 className="font-semibold text-sm line-clamp-2 text-balance">{product.title}</h3>
                   <p className="text-accent font-bold text-base mt-1">৳{product.price}</p>
                 </CardFooter>
               </Card>
@@ -38,5 +56,5 @@ export function FeaturedProducts() {
         </div>
       </div>
     </section>
-  )
+  );
 }
