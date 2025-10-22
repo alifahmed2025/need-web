@@ -4,23 +4,25 @@ import type React from "react";
 import { Search, ShoppingCart, User, Menu, FileText, Heart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // useRef ইম্পোর্ট করা হয়েছে
 import { RequestModal } from "./request-modal";
 import { CartDrawer } from "./cart-drawer";
 import { SignInModal } from "./sign-in-modal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 
 
 type Product = {
     id: number;
     name: string;
-    brand: string; 
+    brand: string;
     category: string;
     price: number;
-    image: string; 
-    title: string; 
+    image: string;
+    title: string;
 };
 
 
@@ -30,102 +32,57 @@ export function Header() {
     const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
     const [signInModalOpen, setSignInModalOpen] = useState(false);
     const [cartCount, setCartCount] = useState(0);
-    const [favoritesCount, setFavoritesCount] = useState(0); // ✅ এই স্টেটটি আপডেট হবে
+    const [favoritesCount, setFavoritesCount] = useState(0); 
     const [searchQuery, setSearchQuery] = useState("");
     const [searchSuggestions, setSearchSuggestions] = useState<Product[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    const [allProducts, setAllProducts] = useState<Product[]>([]); 
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
     const router = useRouter();
 
-    // ✅ ডেটা লোড করার জন্য সংশোধিত useEffect
-    useEffect(() => {
-        
-        // 💥 FIX 1: favoritesCount আপডেটের লজিক
-        const updateFavoritesCount = () => {
-            try {
-                // localStorage থেকে "favorites" অ্যারে লোড করা
-                const storedFavorites = localStorage.getItem("favorites");
-                const favoritesArray: number[] = JSON.parse(storedFavorites || "[]");
-                
-                // অ্যারের দৈর্ঘ্য দিয়ে স্টেট আপডেট করা
-                setFavoritesCount(favoritesArray.length);
-            } catch (e) {
-                console.error("Error reading favorites from localStorage", e);
-                setFavoritesCount(0);
-            }
-        };
+    // 🌟 নতুন স্ক্রলিং স্টেট ও রেফারেন্স যুক্ত করা হয়েছে
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(false);
 
-        // 💥 FIX 2: cartCount আপডেটের লজিক (কার্টের আইটেম সংখ্যা বা মোট সংখ্যা)
-        const updateCartCount = () => {
-            try {
-                // localStorage থেকে "cart" অ্যারে লোড করা
-                const storedCart = localStorage.getItem("cart");
-                const cartArray: { id: number; quantity: number }[] = JSON.parse(storedCart || "[]");
-                
-                // মোট আইটেম সংখ্যা বা মোট কোয়ানটিটি যোগ করা
-                const totalQuantity = cartArray.reduce((sum, item) => sum + item.quantity, 0);
+    // ----------------------------------------------------
+    // --- স্ক্রলিং লজিক ফাংশন
+    // ----------------------------------------------------
 
-                // এখানে আমরা মোট কোয়ানটিটি দেখালাম। যদি শুধু ইউনিক আইটেম সংখ্যা দেখাতে চান, তবে cartArray.length ব্যবহার করুন।
-                setCartCount(totalQuantity); 
-            } catch (e) {
-                console.error("Error reading cart from localStorage", e);
-                setCartCount(0);
-            }
-        };
-
-
-        // প্রোডাক্ট ডেটা লোড করার লজিক (আগের মতো)
-        try {
-            const storedProducts = localStorage.getItem("allProductsData");
-            if (storedProducts) {
-                setAllProducts(JSON.parse(storedProducts) as Product[]); 
-            }
-        } catch (error) {
-            console.error("Failed to load products from localStorage:", error);
-        }
-        
-        
-        // 3. প্রথমে একবার ফাংশনগুলি কল করা
-        updateCartCount();
-        updateFavoritesCount();
-
-        // 4. ইভেন্ট লিসেনারগুলি সেট করা (অন্যান্য ট্যাব বা কোড থেকে ডেটা আপডেট হলে শোনার জন্য)
-        window.addEventListener("storage", updateCartCount);
-        window.addEventListener("storage", updateFavoritesCount);
-        window.addEventListener("cartUpdated", updateCartCount);
-        window.addEventListener("favoritesUpdated", updateFavoritesCount);
-
-        // 5. Cleanup ফাংশন
-        return () => {
-            window.removeEventListener("storage", updateCartCount);
-            window.removeEventListener("storage", updateFavoritesCount);
-            window.removeEventListener("cartUpdated", updateCartCount);
-            window.removeEventListener("favoritesUpdated", updateFavoritesCount);
-        };
-    }, []);
-
-    // 💥 সার্চ লজিক সংশোধন (আগের মতোই আছে)
-    useEffect(() => {
-        if (searchQuery.trim().length > 0 && allProducts.length > 0) {
+    // স্ক্রলিং এর অবস্থান চেক করে Arrow বাটন দেখানোর/লুকানোর লজিক
+    const checkScroll = () => {
+        if (scrollContainerRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
             
-            const filtered = allProducts 
-                .filter(
-                    (p) =>
-                        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        p.category.toLowerCase().includes(searchQuery.toLowerCase()) 
-                )
-                .slice(0, 5);
+            // বাম তীর দেখাও যদি ডানদিকে স্ক্রল করা যায়
+            setShowLeftArrow(scrollLeft > 20); // 20 পিক্সেল বাফার
             
-            setSearchSuggestions(filtered);
-            setShowSuggestions(true);
-        } else {
-            setSearchSuggestions([]);
-            setShowSuggestions(false);
+            // ডান তীর দেখাও যদি আরও কন্টেন্ট লুকানো থাকে
+            // 5 পিক্সেল বাফার রাখা হয়েছে ফ্লোটিং পয়েন্টের সমস্যা এড়াতে
+            setShowRightArrow(scrollWidth > clientWidth && scrollLeft < scrollWidth - clientWidth - 20); 
         }
-    }, [searchQuery, allProducts]); 
+    };
 
+    // তীর চিহ্নে ক্লিক করলে স্ক্রল করার ফাংশন
+    const handleScroll = (direction: 'left' | 'right') => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = 250; // 250 পিক্সেল স্ক্রল হবে
+            const currentScroll = scrollContainerRef.current.scrollLeft;
+            
+            scrollContainerRef.current.scrollTo({
+                left: direction === 'left' ? currentScroll - scrollAmount : currentScroll + scrollAmount,
+                behavior: 'smooth',
+            });
+            
+            // স্ক্রল করার পর অবস্থা আপডেট করতে একটু অপেক্ষা (যাতে অ্যানিমেশন শেষ হয়)
+            setTimeout(checkScroll, 350); 
+        }
+    };
+
+
+    // ----------------------------------------------------
+    // --- ক্যাটাগরি ডেটা (Categories array - সমাধান অনুযায়ী উপরে সংজ্ঞায়িত)
+    // ----------------------------------------------------
     const categories = [
-        // ... (categories array অপরিবর্তিত)
         { name: "OFFER ZONE", href: "/category/offer-zone" },
         { name: "Best Seller", href: "/category/best-seller" },
         { name: "Smartphones", href: "/category/mustard-oil" },
@@ -136,7 +93,107 @@ export function Header() {
         { name: "Cameras", href: "/category/tea-coffee" },
         { name: "Homemade", href: "/category/homemade" },
         { name: "Organic Zone", href: "/category/organic-zone" },
+        { name: "Beauty & Health", href: "/category/beauty-health" },
+        { name: "Sports Goods", href: "/category/sports-goods" },
     ];
+
+
+    // ----------------------------------------------------
+    // --- useEffects
+    // ----------------------------------------------------
+
+    // ডেটা এবং ইভেন্ট লিসেনার সেটআপ
+    useEffect(() => {
+        // ... (আগের লজিক) ...
+        const updateFavoritesCount = () => {
+            try {
+                const storedFavorites = localStorage.getItem("favorites");
+                const favoritesArray: number[] = JSON.parse(storedFavorites || "[]");
+                setFavoritesCount(favoritesArray.length);
+            } catch (e) {
+                console.error("Error reading favorites from localStorage", e);
+                setFavoritesCount(0);
+            }
+        };
+
+        const updateCartCount = () => {
+            try {
+                const storedCart = localStorage.getItem("cart");
+                const cartArray: { id: number; quantity: number }[] = JSON.parse(storedCart || "[]");
+                const totalQuantity = cartArray.reduce((sum, item) => sum + item.quantity, 0);
+                setCartCount(totalQuantity);
+            } catch (e) {
+                console.error("Error reading cart from localStorage", e);
+                setCartCount(0);
+            }
+        };
+
+        try {
+            const storedProducts = localStorage.getItem("allProductsData");
+            if (storedProducts) {
+                setAllProducts(JSON.parse(storedProducts) as Product[]);
+            }
+        } catch (error) {
+            console.error("Failed to load products from localStorage:", error);
+        }
+
+        updateCartCount();
+        updateFavoritesCount();
+
+        window.addEventListener("storage", updateCartCount);
+        window.addEventListener("storage", updateFavoritesCount);
+        window.addEventListener("cartUpdated", updateCartCount);
+        window.addEventListener("favoritesUpdated", updateFavoritesCount);
+
+        return () => {
+            window.removeEventListener("storage", updateCartCount);
+            window.removeEventListener("storage", updateFavoritesCount);
+            window.removeEventListener("cartUpdated", updateCartCount);
+            window.removeEventListener("favoritesUpdated", updateFavoritesCount);
+        };
+    }, []);
+
+    // সার্চ লজিক
+    useEffect(() => {
+        if (searchQuery.trim().length > 0 && allProducts.length > 0) {
+
+            const filtered = allProducts
+                .filter(
+                    (p) =>
+                        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .slice(0, 5);
+
+            setSearchSuggestions(filtered);
+            setShowSuggestions(true);
+        } else {
+            setSearchSuggestions([]);
+            setShowSuggestions(false);
+        }
+    }, [searchQuery, allProducts]);
+
+    // 🌟 স্ক্রলিং লজিক ইমপ্লিমেন্টেশন
+    useEffect(() => {
+        // কম্পোনেন্ট মাউন্ট হওয়ার পর এবং কন্টেন্ট লোড হওয়ার পর স্ক্রল স্ট্যাটাস চেক করুন
+        const currentRef = scrollContainerRef.current;
+        if (currentRef) {
+            checkScroll(); 
+            // স্ক্রল ইভেন্ট লিসেনার যোগ করুন
+            currentRef.addEventListener('scroll', checkScroll);
+        }
+        
+        // উইন্ডো রিসাইজ হলে পুনরায় চেক করুন
+        window.addEventListener('resize', checkScroll);
+
+        return () => {
+            // Cleanup ফাংশন
+            if (currentRef) {
+                currentRef.removeEventListener('scroll', checkScroll);
+            }
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [categories]); // <- এখন এটি কাজ করবে
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -153,10 +210,12 @@ export function Header() {
         setShowSuggestions(false);
     };
 
+    
+    
     return (
         <>
             <header className="bg-white shadow-sm sticky top-0 z-50">
-                {/* ====== Main Header ====== */}
+                {/* ====== Main Header (অপরিবর্তিত) ====== */}
                 <div className="container mx-auto px-4 py-3">
                     <div className="flex items-center justify-between gap-4">
                         {/* Logo */}
@@ -191,9 +250,9 @@ export function Header() {
                             </form>
 
                             {showSuggestions && searchSuggestions.length > 0 && (
-                                <div 
+                                <div
                                     className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
-                                    onMouseDown={(e) => e.preventDefault()} 
+                                    onMouseDown={(e) => e.preventDefault()}
                                 >
                                     {searchSuggestions.map((product) => (
                                         <button
@@ -203,7 +262,7 @@ export function Header() {
                                         >
                                             <img
                                                 src={product.image || "/placeholder.svg"}
-                                                alt={product.title} 
+                                                alt={product.title}
                                                 className="w-12 h-12 object-contain bg-gray-50 rounded"
                                             />
                                             <div className="flex-1">
@@ -235,7 +294,6 @@ export function Header() {
                             <Link href="/favorites">
                                 <Button variant="ghost" size="icon" className="relative hover:text-white">
                                     <Heart className="h-6 w-6" />
-                                    {/* 💥 FIX 4: favoritesCount > 0 হলে সংখ্যা দেখাবে */}
                                     {favoritesCount > 0 && (
                                         <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-semibold">
                                             {favoritesCount}
@@ -251,7 +309,6 @@ export function Header() {
                                 onClick={() => setCartDrawerOpen(true)}
                             >
                                 <ShoppingCart className="h-6 w-6" />
-                                {/* 💥 FIX 5: cartCount > 0 হলে সংখ্যা দেখাবে */}
                                 {cartCount > 0 && (
                                     <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-semibold">
                                         {cartCount}
@@ -285,12 +342,12 @@ export function Header() {
                                 <Search className="h-4 w-4" />
                             </Button>
                         </form>
-                        
+
                         {/* Search Suggestions for Mobile */}
                         {showSuggestions && searchSuggestions.length > 0 && (
-                            <div 
+                            <div
                                 className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
-                                onMouseDown={(e) => e.preventDefault()} 
+                                onMouseDown={(e) => e.preventDefault()}
                             >
                                 {searchSuggestions.map((product) => (
                                     <button
@@ -312,27 +369,65 @@ export function Header() {
                                 ))}
                             </div>
                         )}
-                        
+
                     </div>
                 </div>
 
-                {/* ====== Category Navigation ====== */}
+                {/* ====== Category Navigation (সংশোধিত) ====== */}
                 <div className="border-t bg-white">
-                    <div className="container mx-auto px-4">
-                        {/* Desktop Menu */}
-                        <div className="hidden lg:flex justify-center flex-wrap items-center gap-7 py-3">
-                            {categories.map((category) => (
-                                <Link
-                                    key={category.href}
-                                    href={category.href}
-                                    className="px-5 py-2 text-base font-semibold text-foreground hover:text-primary hover:bg-primary/5 rounded whitespace-nowrap transition-colors"
+                    <div className="container mx-auto px-4 relative">
+
+                        {/* Desktop Menu - Modified for Scroll with Arrows */}
+                        <div className="hidden lg:flex items-center py-3">
+
+                            {/* Left Scroll Button (শুরুর দিকে স্ক্রলিং না থাকলে এটি hidden রাখা হয়েছে) */}
+                            {showLeftArrow && (
+                                <button
+                                    onClick={() => handleScroll('left')}
+                                    className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors"
+                                    aria-label="Scroll left"
                                 >
-                                    {category.name}
-                                </Link>
-                            ))}
+                                    <ChevronLeft className="h-5 w-5" />
+                                </button>
+                            )}
+                            
+                            {/* মেনু কন্টেইনার: useRef যুক্ত করা হয়েছে এবং padding বাড়ানো হয়েছে */}
+                            <div
+                                ref={scrollContainerRef} // <-- useRef যুক্ত করা হয়েছে
+                                id="scroll-menu-container" 
+                                className="flex overflow-x-auto flex-nowrap items-center gap-7 w-full 
+                                    /* স্ক্রলবার লুকানোর জন্য কাস্টম ক্লাস */
+                                    [&::-webkit-scrollbar]:hidden 
+                                    [-ms-overflow-style:none] 
+                                    [scrollbar-width:none] 
+                                    /* Arrow-এর জন্য Padding যোগ করা হয়েছে */
+                                    px-8" 
+                            >
+                                {categories.map((category) => (
+                                    <Link
+                                        key={category.href}
+                                        href={category.href}
+                                        className="px-5 py-2 text-base font-semibold text-foreground hover:text-primary hover:bg-primary/5 rounded whitespace-nowrap transition-colors"
+                                    >
+                                        {category.name}
+                                    </Link>
+                                ))}
+                            </div>
+
+                            {/* Right Scroll Button */}
+                            {showRightArrow && (
+                                <button
+                                    onClick={() => handleScroll('right')}
+                                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors"
+                                    aria-label="Scroll right"
+                                >
+                                    <ChevronRight className="h-5 w-5" />
+                                </button>
+                            )}
+
                         </div>
 
-                        {/* Mobile Category Popup */}
+                        {/* Mobile Category Popup (অপরিবর্তিত) */}
                         <div className="lg:hidden">
                             <Button
                                 variant="ghost"
@@ -394,7 +489,7 @@ export function Header() {
                 </div>
             </header>
 
-            {/* ====== Modals ====== */}
+            {/* ====== Modals (অপরিবর্তিত) ====== */}
             <RequestModal open={requestModalOpen} onOpenChange={setRequestModalOpen} />
             <CartDrawer open={cartDrawerOpen} onOpenChange={setCartDrawerOpen} />
             <SignInModal open={signInModalOpen} onOpenChange={setSignInModalOpen} />
