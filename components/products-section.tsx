@@ -8,7 +8,7 @@ import { Square, Columns3, Rows3, LayoutGrid, Grid3x3, Heart } from "lucide-reac
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 
-// কম্পোনেন্ট ডেটা টাইপ (যদিও any ব্যবহার করা হয়েছে, এটি টাইপ সেফটির জন্য ভালো)
+// কম্পোনেন্ট ডেটা টাইপ
 type Product = {
     id: number;
     title: string;
@@ -18,8 +18,8 @@ type Product = {
 };
 
 export function ProductsSection() {
-    // মোবাইল ভিউ ডিফল্ট: 2 কলাম
-    const [gridCols, setGridCols] = useState(2) 
+    // 🌟 পরিবর্তন এখানে করা হয়েছে: ডিফল্ট কলাম 2 থেকে 5 করা হয়েছে
+    const [gridCols, setGridCols] = useState(5) 
     const [favorites, setFavorites] = useState<number[]>([])
     const [products, setProducts] = useState<Product[]>([]) 
     const [loading, setLoading] = useState(true)
@@ -87,10 +87,10 @@ export function ProductsSection() {
         2: "grid-cols-2 lg:grid-cols-2", 
         3: "grid-cols-2 md:grid-cols-3 lg:grid-cols-3", 
         4: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4", 
+        // 5 কলামের জন্য, মোবাইলে 2, md-তে 3, এবং lg-তে 5 কলাম থাকবে
         5: "grid-cols-2 md:grid-cols-3 lg:grid-cols-5", 
     }
 
-    // 🌟 লোডিং লজিক: সিনট্যাক্স এরর এখানে ছিল না, কিন্তু ফ্লো ঠিক রাখা হলো
     if (loading) {
         return (
             <section className="py-16 text-center">
@@ -99,7 +99,6 @@ export function ProductsSection() {
         )
     }
 
-    // 🌟 মেইন রিটার্ন ব্লক: এখানে কোনো অতিরিক্ত বন্ধনী বা সেমিকোলন নেই
     return (
         <section className="py-12 md:py-16 bg-white">
             <div className="container mx-auto px-4">
@@ -111,7 +110,7 @@ export function ProductsSection() {
 
                     {/* Grid View Changer */}
                     <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-                        {/* 1 ও 2 কলাম বাটন (মোবাইল এবং ডেস্কটপ উভয়ের জন্য) */}
+                        {/* 1 ও 2 কলাম বাটন (মোবাইল এবং ডেস্কটপ উভয়ের জন্য) */}
                         {[1, 2].map((n) => (
                             <Button
                                 key={n}
